@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 248 250 252;
+  --foreground: 15 23 42;
+  --muted: 100 116 139;
+  --ring: 20 184 166;
+}
+
+.dark {
+  --background: 15 23 42;
+  --foreground: 248 250 252;
+}
+
+body {
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ProseMirror {
+  min-height: clamp(28rem, calc(100vh - 18rem), 42.5rem);
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.ProseMirror > * + * {
+  margin-top: 0.9em;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: rgb(148 163 184);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: box-shadow 160ms ease;
+}
+
+.ProseMirror img:hover {
+  box-shadow: 0 0 0 2px #818cf8;
+}
+
+.pdf-node iframe {
+  width: 100%;
+  height: clamp(18rem, 55vh, 24rem);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .ProseMirror {
+    min-height: 60vh;
+  }
+}
+
+::selection {
+  background: rgb(153 246 228);
+  color: rgb(15 23 42);
+}

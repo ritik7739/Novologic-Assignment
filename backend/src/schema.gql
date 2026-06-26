@@ -1,0 +1,74 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input CreateUserInput {
+  address: String!
+  email: String!
+  name: String!
+  phone: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Arbitrary JSON value"""
+scalar JSON
+
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+  deleteFile(fileId: String!): Boolean!
+  restoreVersion(versionId: String!): Workbook!
+  saveWorkbook(content: JSONObject!, workbookId: String!): Workbook!
+  uploadFileMetadata(mimeType: String!, name: String!, size: Int!, storageKey: String!, workbookId: String!): WorkbookFile!
+}
+
+type Query {
+  currentUser: User!
+  user(id: String!): User!
+  workbook(userId: String!): Workbook!
+  workbookVersions(workbookId: String!): [WorkbookVersion!]!
+}
+
+type User {
+  address: String!
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  name: String!
+  phone: String!
+}
+
+type Workbook {
+  content: JSONObject!
+  createdAt: DateTime!
+  files: [WorkbookFile!]!
+  id: ID!
+  updatedAt: DateTime!
+  userId: String!
+  versions: [WorkbookVersion!]!
+}
+
+type WorkbookFile {
+  createdAt: DateTime!
+  id: ID!
+  mimeType: String!
+  name: String!
+  size: Int!
+  storageKey: String!
+  workbookId: String!
+}
+
+type WorkbookVersion {
+  content: JSONObject!
+  id: ID!
+  savedAt: DateTime!
+  workbookId: String!
+}
