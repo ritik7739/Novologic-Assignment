@@ -1,6 +1,6 @@
 # Novologic Online Workbook
 
-Novologic Online Workbook is a full-stack rich text workbook application built with Next.js, NestJS, GraphQL, Prisma, PostgreSQL, and local file uploads. It supports editable workbook content, image/PDF uploads, autosave, version history, restore, and file deletion from both the database and the upload folder.
+Novologic Online Workbook is a full-stack rich text workbook application built with Next.js, NestJS, GraphQL, Prisma, PostgreSQL, and local file uploads. It supports editable workbook content, image/PDF uploads, inline PDF page embedding, autosave, version history, restore, and file deletion from both the database and the upload folder.
 
 This README is written so a new developer can clone the project, configure it, seed it, run it, and understand how the main pieces work.
 
@@ -26,7 +26,8 @@ This README is written so a new developer can clone the project, configure it, s
 ## Features
 
 - Rich text workbook editor powered by Tiptap.
-- Image and PDF upload support.
+- Image upload support with direct insertion into the workbook.
+- PDF upload support that renders each PDF page as an image and appends those images directly into the workbook content.
 - Drag and drop upload support.
 - Local static file serving from the backend.
 - Autosave for workbook content.
@@ -48,6 +49,7 @@ This README is written so a new developer can clone the project, configure it, s
 - TypeScript
 - Apollo Client
 - Tiptap editor
+- PDF.js through `pdfjs-dist` for client-side PDF page rendering
 - Tailwind CSS
 - Framer Motion
 - Sonner toasts
@@ -456,6 +458,36 @@ mutation UploadFileMetadata {
 }
 ```
 
+### Image Upload Behavior
+
+For image files, the frontend:
+
+1. Uploads the image through `POST /upload`.
+2. Saves the returned metadata through `uploadFileMetadata`.
+3. Inserts a regular Tiptap `image` node into the editor using the uploaded file URL.
+
+### PDF Upload Behavior
+
+PDFs are not embedded with an iframe or native browser PDF viewer.
+
+For PDF files, the frontend:
+
+1. Uploads the original PDF through `POST /upload`.
+2. Saves the original PDF metadata through `uploadFileMetadata`, so it remains visible in the Files sidebar for reference/download.
+3. Uses PDF.js on the client to parse the PDF page by page.
+4. Renders each page into an off-screen canvas at scale `2`.
+5. Converts each canvas to a PNG image blob.
+6. Uploads each rendered page image through the same `POST /upload` endpoint.
+7. Saves metadata for each page image.
+8. Inserts the rendered page images into the Tiptap document as normal `image` nodes, in original page order.
+9. Adds paragraph breaks between page images so the PDF appears as a vertical stack of pages in the workbook.
+
+Only the rendered page images are inserted into `Workbook.content`. The original PDF is stored as a separate uploaded file record and is not used as the embedded editor content.
+
+The frontend caps PDF embedding at 50 pages. If a PDF has more pages, only the first 50 pages are rendered and inserted.
+
+The old custom Tiptap PDF node has been removed. The editor should not render `<iframe>` elements for PDFs.
+
 ### File Deletion Behavior
 
 When a file is deleted from the UI:
@@ -703,13 +735,22 @@ npm run dev
 http://localhost:3000
 ```
 
-8. Upload an image or PDF and confirm:
+8. Upload an image and confirm:
 
 - it appears in the sidebar
-- it can be inserted into the editor
+- it is inserted into the editor as an image
 - it exists in `backend/uploads`
 
-9. Delete the file from the UI and confirm:
+9. Upload a multi-page PDF and confirm:
+
+- the original PDF appears in the sidebar
+- each PDF page appears in the editor as a separate stacked image
+- page order matches the PDF order
+- no iframe appears in the editor
+- the rendered page images exist in `backend/uploads`
+- reloading the workbook keeps the embedded page images
+
+10. Delete the file from the UI and confirm:
 
 - it disappears from the sidebar
 - the physical file is removed from `backend/uploads`
@@ -855,6 +896,8 @@ Recommended production changes:
 - Frontend Apollo queries and mutations are in `frontend/src/lib/graphql`.
 - Editor logic is in `frontend/src/components/editor`.
 - File upload UI is in `frontend/src/components/files`.
+- PDF page rendering utility is in `frontend/src/lib/utils/pdfToImages.ts`.
+- Upload orchestration for images and PDFs is in `frontend/src/hooks/useFileUpload.ts`.
 - Version history UI is in `frontend/src/components/versions`.
 
 ## Fresh Setup Summary

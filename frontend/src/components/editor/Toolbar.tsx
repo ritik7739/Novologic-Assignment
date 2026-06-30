@@ -17,14 +17,17 @@ import type { Editor } from '@tiptap/react';
 import { Button } from '@/components/ui/Button';
 import { Separator } from '@/components/ui/Separator';
 import { FileUploadButton } from '@/components/files/FileUploadButton';
+import { UploadProgress } from '@/components/files/UploadProgress';
 import { SaveStatus } from './SaveStatus';
 import { ToolbarButton } from './ToolbarButton';
 import type { SaveStatusValue } from '@/types/editor.types';
+import type { UploadProgressState } from '@/hooks/useFileUpload';
 
 export function Toolbar({
   editor,
   saveStatus,
   uploading,
+  uploadProgress,
   onUpload,
   onManualSave,
   onAiSummary,
@@ -32,10 +35,13 @@ export function Toolbar({
   editor: Editor | null;
   saveStatus: SaveStatusValue;
   uploading?: boolean;
+  uploadProgress?: UploadProgressState | null;
   onUpload: (file: File) => void;
   onManualSave: () => void;
   onAiSummary: () => void;
 }) {
+  const pdfProcessing = uploadProgress?.kind === 'pdf';
+
   return (
     <div className="sticky top-16 z-40 border-b border-slate-200/80 bg-white/95 px-3 py-2 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:top-0 lg:px-6">
       <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto">
@@ -103,7 +109,7 @@ export function Toolbar({
         <ToolbarButton label="Redo" icon={Redo2} disabled={!editor} onClick={() => editor?.chain().focus().redo().run()} />
         <Separator />
         <FileUploadButton kind="image" disabled={uploading} onFile={onUpload} />
-        <FileUploadButton kind="pdf" disabled={uploading} onFile={onUpload} />
+        <FileUploadButton kind="pdf" disabled={uploading} busyLabel={pdfProcessing ? 'Processing PDF...' : undefined} onFile={onUpload} />
         <Button variant="gradient" size="sm" onClick={onAiSummary} disabled={!editor}>
           <Sparkles className="size-4" />
           AI Summary
@@ -115,6 +121,7 @@ export function Toolbar({
           <SaveStatus status={saveStatus} onRetry={onManualSave} />
         </div>
       </div>
+      <UploadProgress progress={uploadProgress ?? null} />
     </div>
   );
 }

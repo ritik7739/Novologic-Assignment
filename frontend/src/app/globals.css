@@ -50,13 +50,6 @@ body {
   box-shadow: 0 0 0 2px #818cf8;
 }
 
-.pdf-node iframe {
-  width: 100%;
-  height: clamp(18rem, 55vh, 24rem);
-  border: 1px solid rgb(226 232 240);
-  border-radius: 0.5rem;
-}
-
 @media (max-width: 640px) {
   .ProseMirror {
     min-height: 60vh;

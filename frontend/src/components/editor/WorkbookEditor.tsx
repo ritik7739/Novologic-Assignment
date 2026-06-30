@@ -43,8 +43,12 @@ function removeMissingFileEmbeds(node: unknown, availableStorageKeys: Set<string
     return node;
   }
 
+  if (node.type === 'pdfNode') {
+    return undefined;
+  }
+
   const storageKey = getUploadStorageKey(isRecord(node.attrs) ? node.attrs.src : undefined);
-  const isFileEmbed = node.type === 'image' || node.type === 'pdfNode';
+  const isFileEmbed = node.type === 'image';
 
   if (isFileEmbed && storageKey && !availableStorageKeys.has(storageKey)) {
     return undefined;
@@ -81,7 +85,7 @@ export function WorkbookEditor({
   onFileInserted?: (requestId: number) => void;
 }) {
   const editorContainerRef = useRef<HTMLDivElement>(null);
-  const { uploadFile, uploading } = useFileUpload(workbook?.id, userId);
+  const { uploadAndInsertFile, uploading, progress } = useFileUpload(workbook?.id, userId);
   const { status, scheduleSave, saveNow } = useAutosave(workbook?.id, saveWorkbook);
 
   const editor = useEditor({
@@ -128,27 +132,9 @@ export function WorkbookEditor({
 
   const insertUploadedFile = useCallback(
     async (file: File) => {
-      if (!editor) {
-        return;
-      }
-
-      try {
-        const uploaded = await uploadFile(file);
-        const src = `${process.env.NEXT_PUBLIC_FILES_BASE_URL ?? 'http://localhost:4000'}${uploaded.storageKey}`;
-
-        if (uploaded.mimeType.startsWith('image/')) {
-          editor.chain().focus().setImage({ src, alt: uploaded.name }).run();
-          return;
-        }
-
-        if (uploaded.mimeType === 'application/pdf') {
-          editor.commands.insertPDFNode({ src, filename: uploaded.name });
-        }
-      } catch {
-        // Toast is emitted by useFileUpload; keep the editor stable.
-      }
+      await uploadAndInsertFile(file, editor);
     },
-    [editor, uploadFile],
+    [editor, uploadAndInsertFile],
   );
 
   const handleFiles = useCallback(
@@ -174,8 +160,7 @@ export function WorkbookEditor({
       editor.chain().focus().setImage({ src, alt: file.name }).run();
       toast.success('Image inserted');
     } else if (file.mimeType === 'application/pdf') {
-      editor.chain().focus().insertPDFNode({ src, filename: file.name }).run();
-      toast.success('PDF inserted');
+      toast.info('PDF references remain in Files. Upload a PDF to embed its pages in the workbook.');
     }
 
     onFileInserted?.(requestId);
@@ -219,6 +204,7 @@ export function WorkbookEditor({
         editor={editor}
         saveStatus={status}
         uploading={uploading}
+        uploadProgress={progress}
         onUpload={(file) => void insertUploadedFile(file)}
         onManualSave={() => void saveNow(editor?.getJSON() as Record<string, unknown> | undefined)}
         onAiSummary={() => {
